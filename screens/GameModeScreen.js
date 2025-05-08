@@ -15,7 +15,7 @@ const GameModeScreen = ({ navigation }) => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('OnlineGame')}
+        /*onPress={() => navigation.navigate('OnlineGame')} */
       >
         <Text style={styles.buttonText}>Online (Multijugador)</Text>
       </TouchableOpacity>

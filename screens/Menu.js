@@ -43,12 +43,12 @@ export default function Menu() {
           <GameButton
             icon='quiz'
             title='Trivia Challenge'
-            onPress={() => navigation.navigate('Trivia')}
+            /* onPress={() => navigation.navigate('Trivia')} */
           />
           <GameButton
             icon='mood-bad'
             title='Ahorcado Multijugador'
-            onPress={() => navigation.navigate('Hangman')}
+            /* onPress={() => navigation.navigate('Hangman')} */
           />
         </View>
 
