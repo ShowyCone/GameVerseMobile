@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   View,
   Text,
@@ -6,13 +6,14 @@ import {
   StyleSheet,
   Animated,
   Easing,
-  ImageBackground,
+  Alert,
+  Modal,
   Dimensions,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { MaterialIcons } from '@expo/vector-icons'
 
-const { width } = Dimensions.get('window')
+const { width, height } = Dimensions.get('window')
 
 const choices = [
   { id: 1, icon: '✊', name: 'Piedra', color: '#FF6B6B' },
@@ -22,27 +23,24 @@ const choices = [
 
 const LocalGame = () => {
   const [players, setPlayers] = useState({
-    1: { choice: null, score: 0 },
-    2: { choice: null, score: 0 },
+    1: { choice: null, score: 0, name: 'Jugador 1' },
+    2: { choice: null, score: 0, name: 'Jugador 2' },
   })
   const [currentPlayer, setCurrentPlayer] = useState(1)
-  const [result, setResult] = useState('')
-  const [gameStatus, setGameStatus] = useState('Jugador 1: Elige tu jugada')
-  const bounceAnim = useRef(new Animated.Value(0)).current
+  const [showResult, setShowResult] = useState(false)
+  const [modalVisible, setModalVisible] = useState(false)
+  const fadeAnim = useRef(new Animated.Value(0)).current
 
-  const animateChoice = () => {
-    bounceAnim.setValue(0)
-    Animated.timing(bounceAnim, {
+  // Animación de fade in
+  const animateFadeIn = () => {
+    Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 500,
-      easing: Easing.elastic(1.5),
+      duration: 1000,
       useNativeDriver: true,
     }).start()
   }
 
   const handleChoice = (choice) => {
-    animateChoice()
-
     const updatedPlayers = {
       ...players,
       [currentPlayer]: { ...players[currentPlayer], choice },
@@ -51,34 +49,41 @@ const LocalGame = () => {
     setPlayers(updatedPlayers)
 
     if (currentPlayer === 1) {
-      setCurrentPlayer(2)
-      setGameStatus('Jugador 2: Elige tu jugada')
+      // Oculta la pantalla y pasa al jugador 2
+      Alert.alert(
+        'Turno completado',
+        'Pasa el dispositivo al Jugador 2',
+        [{ text: 'OK', onPress: () => setCurrentPlayer(2) }],
+        { cancelable: false }
+      )
     } else {
+      // Ambos han elegido, mostrar resultados
       determineWinner(updatedPlayers)
+      animateFadeIn()
+      setShowResult(true)
     }
   }
 
   const determineWinner = (players) => {
-    const { choice: p1 } = players[1]
-    const { choice: p2 } = players[2]
-    let newResult = ''
+    const p1 = players[1].choice
+    const p2 = players[2].choice
+    let resultText = ''
 
     if (p1 === p2) {
-      newResult = '¡Empate!'
+      resultText = '¡Empate!'
     } else if (
       (p1 === '✊' && p2 === '✌️') ||
       (p1 === '✋' && p2 === '✊') ||
       (p1 === '✌️' && p2 === '✋')
     ) {
-      newResult = '¡Jugador 1 gana!'
+      resultText = `¡${players[1].name} gana!`
       players[1].score += 1
     } else {
-      newResult = '¡Jugador 2 gana!'
+      resultText = `¡${players[2].name} gana!`
       players[2].score += 1
     }
 
-    setResult(newResult)
-    setGameStatus(newResult)
+    setModalVisible(true)
   }
 
   const resetRound = () => {
@@ -87,14 +92,10 @@ const LocalGame = () => {
       2: { ...players[2], choice: null },
     })
     setCurrentPlayer(1)
-    setResult('')
-    setGameStatus('Jugador 1: Elige tu jugada')
+    setShowResult(false)
+    fadeAnim.setValue(0)
+    setModalVisible(false)
   }
-
-  const translateY = bounceAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, -15, 0],
-  })
 
   return (
     <LinearGradient
@@ -105,58 +106,96 @@ const LocalGame = () => {
       <View style={styles.header}>
         <Text style={styles.title}>Piedra, Papel o Tijera</Text>
         <View style={styles.scoreContainer}>
-          <Text style={styles.score}>J1: {players[1].score}</Text>
-          <Text style={styles.vs}>VS</Text>
-          <Text style={styles.score}>J2: {players[2].score}</Text>
+          <Text style={styles.score}>
+            {players[1].score} - {players[2].score}
+          </Text>
         </View>
       </View>
+      {/* Turno actual */}
+      <Text style={styles.turnText}>
+        {showResult ? 'Resultado' : `Turno: ${players[currentPlayer].name}`}
+      </Text>
+      {/* Área de juego */}
+      {!showResult ? (
+        <View style={styles.gameArea}>
+          <Text style={styles.instruction}>
+            {currentPlayer === 1
+              ? 'Jugador 1: Elige en secreto'
+              : 'Jugador 2: Elige en secreto'}
+          </Text>
 
-      {/* Estado del juego */}
-      <Text style={styles.status}>{gameStatus}</Text>
-
-      {/* Selección de jugadores */}
-      <View style={styles.choicesContainer}>
-        {choices.map((item) => (
-          <Animated.View
-            key={item.id}
-            style={[styles.choiceWrapper, { transform: [{ translateY }] }]}
-          >
-            <TouchableOpacity
-              style={[styles.choiceButton, { backgroundColor: item.color }]}
-              onPress={() => handleChoice(item.icon)}
-              disabled={!!result}
-            >
-              <Text style={styles.choiceIcon}>{item.icon}</Text>
-              <Text style={styles.choiceName}>{item.name}</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        ))}
-      </View>
-
-      {/* Resultados */}
-      <View style={styles.resultsContainer}>
-        {players[1].choice && (
-          <View style={styles.playerChoice}>
-            <Text style={styles.playerLabel}>Jugador 1</Text>
+          <View style={styles.choicesContainer}>
+            {choices.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.choiceButton, { backgroundColor: item.color }]}
+                onPress={() => handleChoice(item.icon)}
+              >
+                <Text style={styles.choiceIcon}>{item.icon}</Text>
+                <Text style={styles.choiceName}>{item.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      ) : (
+        <Animated.View style={[styles.resultsArea, { opacity: fadeAnim }]}>
+          <View style={styles.resultCard}>
+            <Text style={styles.playerName}>{players[1].name}</Text>
             <Text style={styles.choiceResult}>{players[1].choice}</Text>
           </View>
-        )}
 
-        {players[2].choice && (
-          <View style={styles.playerChoice}>
-            <Text style={styles.playerLabel}>Jugador 2</Text>
+          <Text style={styles.vsText}>VS</Text>
+
+          <View style={styles.resultCard}>
+            <Text style={styles.playerName}>{players[2].name}</Text>
             <Text style={styles.choiceResult}>{players[2].choice}</Text>
           </View>
-        )}
-      </View>
-
-      {/* Botón de reinicio */}
-      {result && (
-        <TouchableOpacity style={styles.resetButton} onPress={resetRound}>
-          <MaterialIcons name='replay' size={24} color='white' />
-          <Text style={styles.resetText}>Nueva ronda</Text>
-        </TouchableOpacity>
+        </Animated.View>
       )}
+      {/* Modal de resultado */}
+      <Modal
+        animationType='slide'
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>¡Resultado Final!</Text>
+
+            {/* Jugador 1 */}
+            <View style={styles.modalPlayer}>
+              <Text style={styles.modalPlayerName}>{players[1].name}</Text>
+              <Text style={styles.modalPlayerChoice}>{players[1].choice}</Text>
+            </View>
+
+            {/* VS */}
+            <Text style={styles.modalVS}>VS</Text>
+
+            {/* Jugador 2 */}
+            <View style={styles.modalPlayer}>
+              <Text style={styles.modalPlayerName}>{players[2].name}</Text>
+              <Text style={styles.modalPlayerChoice}>{players[2].choice}</Text>
+            </View>
+
+            {/* Resultado */}
+            <View style={styles.modalResultContainer}>
+              <Text style={styles.modalResultText}>
+                {players[1].choice === players[2].choice
+                  ? '¡Empate!'
+                  : players[1].score > players[2].score
+                  ? `¡${players[1].name} gana!`
+                  : `¡${players[2].name} gana!`}
+              </Text>
+            </View>
+
+            <TouchableOpacity style={styles.modalButton} onPress={resetRound}>
+              <MaterialIcons name='replay' size={24} color='white' />
+              <Text style={styles.modalButtonText}>Jugar otra vez</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   )
 }
@@ -164,7 +203,7 @@ const LocalGame = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
+    paddingTop: 20,
   },
   header: {
     alignItems: 'center',
@@ -174,39 +213,35 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
-    marginBottom: 10,
   },
   scoreContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginTop: 10,
   },
   score: {
-    fontSize: 22,
-    fontWeight: 'bold',
+    fontSize: 24,
     color: 'white',
-    marginHorizontal: 15,
+    fontWeight: 'bold',
   },
-  vs: {
-    fontSize: 16,
-    color: '#aaa',
-  },
-  status: {
-    fontSize: 18,
+  turnText: {
+    fontSize: 22,
     color: '#fff',
     textAlign: 'center',
     marginBottom: 30,
     fontWeight: '600',
   },
-  choicesContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  gameArea: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  instruction: {
+    fontSize: 18,
+    color: '#aaa',
+    textAlign: 'center',
     marginBottom: 40,
   },
-  choiceWrapper: {
-    alignItems: 'center',
+  choicesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   choiceButton: {
     width: width * 0.3,
@@ -223,40 +258,125 @@ const styles = StyleSheet.create({
   },
   choiceIcon: {
     fontSize: 50,
-    marginBottom: 5,
   },
   choiceName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: 'white',
+    marginTop: 5,
   },
-  resultsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 30,
+  resultsArea: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  playerChoice: {
+  resultCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 20,
+    borderRadius: 15,
     alignItems: 'center',
+    marginVertical: 15,
   },
-  playerLabel: {
-    fontSize: 16,
-    color: '#aaa',
+  playerName: {
+    fontSize: 18,
+    color: 'white',
+    fontWeight: 'bold',
     marginBottom: 10,
   },
   choiceResult: {
     fontSize: 60,
   },
-  resetButton: {
+  vsText: {
+    fontSize: 20,
+    color: 'white',
+    textAlign: 'center',
+    marginVertical: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  modalContent: {
+    backgroundColor: '#24243e',
+    padding: 25,
+    borderRadius: 15,
+    alignItems: 'center',
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 24,
+    color: 'white',
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#6d28d9',
+    padding: 15,
+    borderRadius: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalContent: {
+    backgroundColor: '#24243e',
+    padding: 25,
+    borderRadius: 15,
+    alignItems: 'center',
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 24,
+    color: 'white',
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalPlayer: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  modalPlayerName: {
+    fontSize: 18,
+    color: '#aaa',
+    fontWeight: '600',
+  },
+  modalPlayerChoice: {
+    fontSize: 60,
+    marginTop: 5,
+  },
+  modalVS: {
+    fontSize: 20,
+    color: 'white',
+    fontWeight: 'bold',
+    marginVertical: 5,
+  },
+  modalResultContainer: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+  },
+  modalResultText: {
+    fontSize: 22,
+    color: '#FFD700',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalButton: {
     flexDirection: 'row',
     backgroundColor: '#6d28d9',
     padding: 15,
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'center',
-    width: '60%',
+    width: '100%',
+    marginTop: 20,
   },
-  resetText: {
+  modalButtonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
