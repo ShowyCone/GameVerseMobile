@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import {
   View,
   Text,
@@ -19,9 +19,6 @@ export default function Chat() {
   ])
   const [message, setMessage] = useState('')
   const flatListRef = useRef()
-
-  // Ajusta automáticamente el offset en iOS
-  const keyboardVerticalOffset = Platform.OS === 'ios' ? 60 : 0
 
   const sendMessage = () => {
     if (!message.trim()) return
@@ -44,16 +41,16 @@ export default function Chat() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
-        keyboardVerticalOffset={keyboardVerticalOffset}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerText}>Chat Global</Text>
         </View>
 
-        {/* Mensajes con margen inferior */}
+        {/* Lista de mensajes */}
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -70,11 +67,10 @@ export default function Chat() {
               <Text style={styles.time}>{item.time}</Text>
             </View>
           )}
-          contentContainerStyle={styles.messagesContainer}
+          contentContainerStyle={styles.messagesList}
         />
 
-        {/* Input fijo en la parte inferior */}
-        <View style={styles.inputWrapper}>
+        <View style={[styles.inputWrapper]}>
           <TextInput
             style={styles.input}
             placeholder='Escribe un mensaje...'
@@ -118,9 +114,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  messagesContainer: {
+  messagesList: {
     padding: 10,
-    paddingBottom: 100, // Margen extra para el input
+    paddingBottom: Platform.OS === 'ios' ? 100 : 150, // Ajuste confirmado
   },
   message: {
     maxWidth: '80%',
@@ -153,14 +149,8 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   inputWrapper: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
     padding: 10,
-    backgroundColor: '#16213e',
-    paddingBottom: Platform.OS === 'ios' ? 25 : 10,
   },
   input: {
     flex: 1,
