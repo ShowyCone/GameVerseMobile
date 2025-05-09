@@ -11,11 +11,23 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { MaterialIcons } from '@expo/vector-icons'
+import { useGame } from '../context/GameContext'
 
 const { width } = Dimensions.get('window')
 
 export default function Menu() {
+  const { setSelectedGame } = useGame()
   const navigation = useNavigation()
+
+  const games = [
+    {
+      id: 'RockPaperScissors',
+      name: 'Piedra Papel o Tijeras',
+      component: 'GameMode',
+    },
+    { id: 'TicTacToe', name: 'Tic-Tac-Toe', component: 'GameMode' },
+    { id: 'ConnectFour', name: '4 en raya', component: 'GameMode' },
+  ]
 
   return (
     <View style={styles.container}>
@@ -35,21 +47,17 @@ export default function Menu() {
         />
 
         <View style={styles.buttonsContainer}>
-          <GameButton
-            icon='sports-esports'
-            title='Piedra, Papel o Tijeras'
-            onPress={() => navigation.navigate('GameMode')}
-          />
-          <GameButton
-            icon='quiz'
-            title='Trivia Challenge'
-            /* onPress={() => navigation.navigate('Trivia')} */
-          />
-          <GameButton
-            icon='mood-bad'
-            title='Ahorcado Multijugador'
-            /* onPress={() => navigation.navigate('Hangman')} */
-          />
+          {games.map((game) => (
+            <GameButton
+              key={game.id}
+              icon='sports-esports'
+              title={game.name}
+              onPress={() => {
+                setSelectedGame(game.id)
+                navigation.navigate('GameMode')
+              }}
+            />
+          ))}
         </View>
 
         <TouchableOpacity

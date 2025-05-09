@@ -1,14 +1,17 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { useGame } from '../context/GameContext'
 
 const GameModeScreen = ({ navigation }) => {
+  const { selectedGame } = useGame()
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Elige el modo de juego:</Text>
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('LocalGame')}
+        onPress={() => navigation.navigate(selectedGame)}
       >
         <Text style={styles.buttonText}>Local (2 jugadores)</Text>
       </TouchableOpacity>

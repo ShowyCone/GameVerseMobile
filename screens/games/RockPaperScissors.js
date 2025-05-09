@@ -16,12 +16,12 @@ import { MaterialIcons } from '@expo/vector-icons'
 const { width, height } = Dimensions.get('window')
 
 const choices = [
-  { id: 1, icon: '✊', name: 'Piedra', color: '#FF6B6B' },
-  { id: 2, icon: '✋', name: 'Papel', color: '#4ECDC4' },
-  { id: 3, icon: '✌️', name: 'Tijera', color: '#FFD166' },
+  { id: 1, icon: '✊', name: 'Piedra', color: 'rgba(255, 255, 255, 0.05)' },
+  { id: 2, icon: '✋', name: 'Papel', color: 'rgba(255, 255, 255, 0.05)' },
+  { id: 3, icon: '✌️', name: 'Tijera', color: 'rgba(255, 255, 255, 0.05)' },
 ]
 
-const LocalGame = () => {
+const RockPaperScissors = () => {
   const [players, setPlayers] = useState({
     1: { choice: null, score: 0, name: 'Jugador 1' },
     2: { choice: null, score: 0, name: 'Jugador 2' },
@@ -68,6 +68,7 @@ const LocalGame = () => {
     const p1 = players[1].choice
     const p2 = players[2].choice
     let resultText = ''
+    let winner = null
 
     if (p1 === p2) {
       resultText = '¡Empate!'
@@ -77,11 +78,22 @@ const LocalGame = () => {
       (p1 === '✌️' && p2 === '✋')
     ) {
       resultText = `¡${players[1].name} gana!`
-      players[1].score += 1
+      winner = 1
     } else {
       resultText = `¡${players[2].name} gana!`
-      players[2].score += 1
+      winner = 2
     }
+
+    setPlayers((prevPlayers) => ({
+      1: {
+        ...prevPlayers[1],
+        score: winner === 1 ? prevPlayers[1].score + 1 : prevPlayers[1].score,
+      },
+      2: {
+        ...prevPlayers[2],
+        score: winner === 2 ? prevPlayers[2].score + 1 : prevPlayers[2].score,
+      },
+    }))
 
     setModalVisible(true)
   }
@@ -183,7 +195,11 @@ const LocalGame = () => {
               <Text style={styles.modalResultText}>
                 {players[1].choice === players[2].choice
                   ? '¡Empate!'
-                  : players[1].score > players[2].score
+                  : (players[1].choice === '✊' &&
+                      players[2].choice === '✌️') ||
+                    (players[1].choice === '✋' &&
+                      players[2].choice === '✊') ||
+                    (players[1].choice === '✌️' && players[2].choice === '✋')
                   ? `¡${players[1].name} gana!`
                   : `¡${players[2].name} gana!`}
               </Text>
@@ -246,7 +262,7 @@ const styles = StyleSheet.create({
   choiceButton: {
     width: width * 0.3,
     height: width * 0.3,
-    borderRadius: width * 0.125,
+    borderRadius: width * 0.135,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
@@ -384,4 +400,4 @@ const styles = StyleSheet.create({
   },
 })
 
-export default LocalGame
+export default RockPaperScissors
