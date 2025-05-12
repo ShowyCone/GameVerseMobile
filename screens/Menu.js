@@ -1,4 +1,4 @@
-import React from 'react'
+import { useState } from 'react'
 import {
   View,
   Text,
@@ -12,12 +12,22 @@ import { useNavigation } from '@react-navigation/native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useGame } from '../context/GameContext'
+import { useUser } from '../context/UserContext'
 
 const { width } = Dimensions.get('window')
 
 export default function Menu() {
   const { setSelectedGame } = useGame()
   const navigation = useNavigation()
+  const { setUsername } = useUser()
+  const [inputName, setInputName] = useState('')
+
+  const handleSubmit = () => {
+    const finalUsername =
+      inputName.trim() || `Jugador${Math.floor(Math.random() * 9000 + 1000)}`
+    setUsername(finalUsername)
+    navigation.navigate('Chat')
+  }
 
   const games = [
     {
@@ -44,6 +54,8 @@ export default function Menu() {
           placeholder='Nombre de jugador'
           placeholderTextColor='#a1a1aa'
           cursorColor='#6d28d9'
+          value={inputName}
+          onChangeText={setInputName}
         />
 
         <View style={styles.buttonsContainer}>
@@ -62,7 +74,10 @@ export default function Menu() {
 
         <TouchableOpacity
           style={styles.chatButton}
-          onPress={() => navigation.navigate('Chat')}
+          onPress={() => {
+            handleSubmit()
+            navigation.navigate('Chat')
+          }}
         >
           <MaterialIcons name='chat' size={24} color='white' />
           <Text style={styles.chatButtonText}>Chat Global</Text>

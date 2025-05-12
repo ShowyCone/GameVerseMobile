@@ -11,14 +11,14 @@ const GameModeScreen = ({ navigation }) => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate(selectedGame)}
+        onPress={() => navigation.navigate(selectedGame, { isOnline: false })}
       >
         <Text style={styles.buttonText}>Local (2 jugadores)</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.button}
-        /*onPress={() => navigation.navigate('OnlineGame')} */
+        onPress={() => navigation.navigate(selectedGame, { isOnline: true })}
       >
         <Text style={styles.buttonText}>Online (Multijugador)</Text>
       </TouchableOpacity>
